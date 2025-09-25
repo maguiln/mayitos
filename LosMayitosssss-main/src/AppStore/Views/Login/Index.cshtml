@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Gestión</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: hsl(218, 45%, 55%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            width: 400px;
+            text-align: center;
+        }
+
+        .login-container img {
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+
+        h2 {
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+
+        .invalid-feedback {
+            display: none;
+            color: #dc3545;
+            font-size: 0.875em;
+            margin-top: 5px;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-login:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-login:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="~/images/noDisponible.jpg" alt="Logo" width="150" height="150">
+        <h2>Iniciar Sesión</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Usuario:</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+                <div class="invalid-feedback">Por favor ingrese su usuario</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+                <div class="invalid-feedback">Por favor ingrese su contraseña</div>
+            </div>
+            
+            <button type="submit" class="btn-login" id="btnLogin">
+                Ingresar al Sistema
+            </button>
+        </form>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/sweetalert2/sweetalert2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Credenciales de prueba
+            const USUARIO_PRUEBA = "admin";
+            const CONTRASEÑA_PRUEBA = "admin123";
+
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Obtener valores
+                const usuario = $('#username').val().trim();
+                const contraseña = $('#password').val().trim();
+                
+                // Validar campos vacíos
+                let hayErrores = false;
+                
+                if (!usuario) {
+                    $('#username').addClass('is-invalid');
+                    hayErrores = true;
+                } else {
+                    $('#username').removeClass('is-invalid');
+                }
+                
+                if (!contraseña) {
+                    $('#password').addClass('is-invalid');
+                    hayErrores = true;
+                } else {
+                    $('#password').removeClass('is-invalid');
+                }
+                
+                if (hayErrores) return;
+
+                // Deshabilitar botón
+                $('#btnLogin').prop('disabled', true).text('Ingresando...');
+
+                // Simular delay de autenticación
+                setTimeout(function() {
+                    if (usuario === USUARIO_PRUEBA && contraseña === CONTRASEÑA_PRUEBA) {
+                        // Login exitoso
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Bienvenido!',
+                            text: 'Acceso correcto al sistema',
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            window.location.href = '/Home';
+                        });
+                    } else {
+                        // Login fallido
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de acceso',
+                            text: 'Usuario o contraseña incorrectos'
+                        });
+                        $('#btnLogin').prop('disabled', false).text('Ingresar al Sistema');
+                    }
+                }, 1000);
+            });
+
+            // Limpiar errores al escribir
+            $('.form-control').on('input', function() {
+                $(this).removeClass('is-invalid');
+            });
+        });
+    </script>
+</body>
+</html> 

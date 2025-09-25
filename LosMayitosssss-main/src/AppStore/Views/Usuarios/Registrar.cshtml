@@ -1,0 +1,190 @@
+@{
+    ViewData["Title"] = "Registrar Usuario";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Usuario - Autobuses Mayitos</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css">
+    <style>
+        /* Estilos del sidebar (igual que en Home/Index.cshtml) */
+        .sidebar {
+            width: 250px;
+            background-color: #343a40;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Menú</h2>
+        <div class="input-group mb-3">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Usuarios
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/Usuarios/Registrar">Registrar</a></li>
+                <li><a class="dropdown-item" href="/Usuarios/Modificar">Modificar</a></li>
+                <li><a class="dropdown-item" href="/Usuarios/Eliminar">Eliminar</a></li>
+            </ul>
+        </div>
+        <div class="input-group mb-3">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Autobuses
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/Autobuses/Registrar">Registrar</a></li>
+                <li><a class="dropdown-item" href="/Autobuses/Modificar">Modificar</a></li>
+                <li><a class="dropdown-item" href="/Autobuses/Eliminar">Eliminar</a></li>
+            </ul>
+        </div>
+        <div class="input-group mb-3">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Informe
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/Informe/Generar">Generar Informe</a></li>
+            </ul>
+        </div>
+        <button type="button" class="btn btn-danger" onclick="cerrarSesion()">
+            Cerrar Sesión
+        </button>
+    </div>
+
+    <!-- Contenido -->
+    <div class="content">
+        <div class="form-container">
+            <h2 class="text-center mb-4">Registrar Usuario</h2>
+            <form id="formRegistro">
+                <div class="form-group">
+                    <label for="userId">ID Usuario</label>
+                    <input type="text" class="form-control" id="userId" name="userId" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="userName">Nombre</label>
+                    <input type="text" class="form-control" id="userName" name="userName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="userType">Tipo de Usuario</label>
+                    <input type="text" class="form-control" id="userType" name="userType" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Teléfono</label>
+                    <input type="tel" class="form-control" id="phone" name="phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Crear Contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirmar Contraseña</label>
+                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="confirmarRegistro()">Registrar</button>
+                    <button type="button" class="btn btn-secondary" onclick="limpiarFormulario()">Limpiar</button>
+                    <button type="button" class="btn btn-secondary" onclick="volverAlMenu()">Regresar al Menú</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/sweetalert2/sweetalert2.min.js"></script>
+    <script>
+        function confirmarRegistro() {
+            // Validar que las contraseñas coincidan
+            if (document.getElementById('password').value !== document.getElementById('confirmPassword').value) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Las contraseñas no coinciden'
+                });
+                return;
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: 'Usuario registrado correctamente',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                limpiarFormulario();
+            });
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('formRegistro').reset();
+        }
+
+        function volverAlMenu() {
+            window.location.href = '/Home';
+        }
+
+        function cerrarSesion() {
+            Swal.fire({
+                title: '¿Cerrar sesión?',
+                text: "¿Está seguro que desea salir del sistema?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, cerrar sesión',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/Login';
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

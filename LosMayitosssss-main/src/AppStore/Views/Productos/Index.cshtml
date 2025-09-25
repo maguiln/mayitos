@@ -1,0 +1,640 @@
+@model IEnumerable<AppStore.Models.Producto>
+
+<div class="container">
+    <h1 class="my-4">Gestión de Productos</h1>
+
+    <div class="mb-3">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalProducto">
+            <i class="fas fa-plus"></i> Agregar Producto
+        </button>
+        <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#modalReporte">
+            <i class="fas fa-file-pdf"></i> Generar Reporte
+        </button>
+    </div>
+
+    <!-- Tabla de productos -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Unidad Medida</th>
+                <th>Contenido Neto</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Imagen</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.IDProducto</td>
+                    <td>@(item.Nombre?.Length > 25 ? item.Nombre.Substring(0, 25) + "..." : item.Nombre)</td>
+                    <td>@item.UnidadMedida</td>
+                    <td>@item.ContenidoNeto</td>
+                    <td>@item.Precio.ToString("C")</td>
+                    <td>@item.Stock</td>
+                    <td>
+                        <img src="@(string.IsNullOrEmpty(item.Imagen) ? "/images/noDisponible.jpg" : item.Imagen)" 
+                             alt="@item.Nombre" 
+                             style="width:50px; height:50px; object-fit:cover;" />
+                    </td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="editarProducto(@item.IDProducto)">Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="confirmarEliminar(@item.IDProducto, '@item.Nombre')">Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Después de la tabla -->
+    @if (ViewBag.TotalPaginas > 1)
+    {
+        <nav aria-label="Navegación de páginas">
+            <ul class="pagination justify-content-center">
+                @if (ViewBag.PaginaActual > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { pagina = ViewBag.PaginaActual - 1 })">Anterior</a>
+                    </li>
+                }
+                
+                @for (int i = 1; i <= ViewBag.TotalPaginas; i++)
+                {
+                    <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { pagina = i })">@i</a>
+                    </li>
+                }
+
+                @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { pagina = ViewBag.PaginaActual + 1 })">Siguiente</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+
+    <!-- Modal de Crear Producto -->
+    <div class="modal fade" id="modalProducto" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Nuevo Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formProducto" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label">ID Producto</label>
+                            <input type="text" class="form-control" id="siguienteId" disabled>
+                            <small class="text-muted">Este será el ID asignado al nuevo producto</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Nombre" class="form-label required">Nombre del Producto</label>
+                            <input type="text" class="form-control" id="Nombre" name="Nombre" required maxlength="50">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="UnidadMedida" class="form-label required">Unidad de Medida</label>
+                            <select class="form-control" id="UnidadMedida" name="UnidadMedida" required>
+                                <option value="">Seleccione...</option>
+                                <option value="ml">ml</option>
+                                <option value="gr">gr</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ContenidoNeto" class="form-label required">Contenido Neto</label>
+                            <input type="number" class="form-control" id="ContenidoNeto" name="ContenidoNeto" required min="1">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Precio" class="form-label required">Precio</label>
+                            <input type="number" step="0.01" class="form-control" id="Precio" name="Precio" required min="0.01">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Stock" class="form-label">Stock</label>
+                            <input type="number" class="form-control" id="Stock" name="Stock" min="0">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Imagen del Producto</label>
+                            <input type="file" class="form-control" id="file" name="file" accept="image/*">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarProducto()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición -->
+    <div class="modal fade" id="modalEditar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditar" enctype="multipart/form-data">
+                        <input type="hidden" id="editId">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">ID Producto</label>
+                            <input type="text" class="form-control" id="editIDProducto" disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editNombre" class="form-label required">Nombre del Producto</label>
+                            <input type="text" class="form-control" id="editNombre" name="Nombre" 
+                                   required maxlength="50">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editUnidadMedida" class="form-label required">Unidad de Medida</label>
+                            <select class="form-control" id="editUnidadMedida" name="UnidadMedida" required>
+                                <option value="">Seleccione...</option>
+                                <option value="ml">Mililitros (ml)</option>
+                                <option value="gr">Gramos (gr)</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editContenidoNeto" class="form-label required">Contenido Neto</label>
+                            <input type="number" class="form-control" id="editContenidoNeto" 
+                                   name="ContenidoNeto" required min="1">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editPrecio" class="form-label required">Precio</label>
+                            <input type="number" step="0.01" class="form-control" id="editPrecio" 
+                                   name="Precio" required min="0.01">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editStock" class="form-label">Stock</label>
+                            <input type="number" class="form-control" id="editStock" name="Stock" min="0">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Imagen Actual</label>
+                            <div>
+                                <img id="imagenActual" src="" alt="Imagen actual" 
+                                     style="max-width: 200px; max-height: 200px;">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editFile" class="form-label">Nueva Imagen (opcional)</label>
+                            <input type="file" class="form-control" id="editFile" name="file">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarEdicion()">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Reporte -->
+    <div class="modal fade" id="modalReporte" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generar Reporte de Inventario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formReporte">
+                        <div class="mb-3">
+                            <label for="fechaInicial" class="form-label required">Fecha Inicial</label>
+                            <input type="date" class="form-control" id="fechaInicial" name="fechaInicial" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fechaFinal" class="form-label required">Fecha Final</label>
+                            <input type="date" class="form-control" id="fechaFinal" name="fechaFinal" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="mostrarPreview">
+                                <label class="form-check-label" for="mostrarPreview">
+                                    Mostrar vista previa
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="generarReporte()">Generar Reporte</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function guardarProducto() {
+            // Limpiar mensajes de error previos
+            $('.invalid-feedback').empty();
+            $('.form-control').removeClass('is-invalid');
+            $('#errorMessages').hide().empty();
+
+            // Validar el formulario
+            if (!validarFormulario()) {
+                return;
+            }
+
+            // Crear FormData con el formulario completo
+            var formData = new FormData($('#formProducto')[0]);
+            
+            // Mostrar indicador de carga
+            Swal.fire({
+                title: 'Guardando producto',
+                text: 'Por favor espere...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: '@Url.Action("Crear", "Productos")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: 'Producto guardado correctamente',
+                            icon: 'success'
+                        }).then(() => {
+                            $('#modalProducto').modal('hide');
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', response.message, 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('Error', 'Ocurrió un error al guardar el producto', 'error');
+                }
+            });
+        }
+
+        function validarFormulario() {
+            let esValido = true;
+
+            // Validar campos obligatorios
+            if (!$('#Nombre').val().trim()) {
+                mostrarError('Nombre', 'El nombre es obligatorio');
+                esValido = false;
+            }
+
+            if (!$('#UnidadMedida').val()) {
+                mostrarError('UnidadMedida', 'Debe seleccionar una unidad de medida');
+                esValido = false;
+            }
+
+            // Validar números positivos
+            const contenidoNeto = parseFloat($('#ContenidoNeto').val());
+            if (isNaN(contenidoNeto) || contenidoNeto <= 0) {
+                mostrarError('ContenidoNeto', 'El contenido neto debe ser mayor a 0');
+                esValido = false;
+            }
+
+            const precio = parseFloat($('#Precio').val());
+            if (isNaN(precio) || precio <= 0) {
+                mostrarError('Precio', 'El precio debe ser mayor a 0');
+                esValido = false;
+            }
+
+            // Validar stock (permitir vacío = 0)
+            const stockInput = $('#Stock').val();
+            if (stockInput !== '') {
+                const stock = parseInt(stockInput);
+                if (isNaN(stock) || stock < 0) {
+                    mostrarError('Stock', 'El stock no puede ser negativo');
+                    esValido = false;
+                }
+            }
+
+            return esValido;
+        }
+
+        function mostrarError(campo, mensaje) {
+            $(`#${campo}`).addClass('is-invalid')
+                         .siblings('.invalid-feedback')
+                         .text(mensaje);
+        }
+
+        function mostrarErrores(mensaje) {
+            $('#errorMessages').html(mensaje).show();
+        }
+
+        // Limpiar el formulario cuando se cierra el modal
+        $('#modalProducto').on('hidden.bs.modal', function () {
+            $('#formProducto')[0].reset();
+            $('.invalid-feedback').empty();
+            $('.form-control').removeClass('is-invalid');
+            $('#errorMessages').hide().empty();
+        });
+
+        function editarProducto(id) {
+            // Limpiar errores previos
+            $('.invalid-feedback').empty();
+            $('.form-control').removeClass('is-invalid');
+            
+            // Obtener datos del producto
+            $.get('@Url.Action("ObtenerProducto", "Productos")', { id: id }, function(response) {
+                if (response.success) {
+                    var producto = response.producto;
+                    
+                    // Poblar el formulario
+                    $('#editId').val(producto.idProducto);
+                    $('#editIDProducto').val(producto.idProducto);
+                    $('#editNombre').val(producto.nombre);
+                    $('#editUnidadMedida').val(producto.unidadMedida);
+                    $('#editContenidoNeto').val(producto.contenidoNeto);
+                    $('#editPrecio').val(producto.precio);
+                    $('#editStock').val(producto.stock);
+                    $('#imagenActual').attr('src', producto.imagen || '/images/noDisponible.jpg');
+                    
+                    // Mostrar modal
+                    $('#modalEditar').modal('show');
+                } else {
+                    Swal.fire('Error', response.message, 'error');
+                }
+            });
+        }
+
+        function guardarEdicion() {
+            // Validar formulario
+            if (!validarFormularioEdicion()) {
+                return;
+            }
+
+            var id = $('#editId').val();
+            var formData = new FormData();
+            
+            formData.append('id', id);
+            formData.append('Nombre', $('#editNombre').val().trim());
+            formData.append('UnidadMedida', $('#editUnidadMedida').val());
+            formData.append('ContenidoNeto', $('#editContenidoNeto').val());
+            formData.append('Precio', $('#editPrecio').val());
+            formData.append('Stock', $('#editStock').val() || '0');
+            
+            var fileInput = $('#editFile')[0];
+            if (fileInput.files.length > 0) {
+                formData.append('file', fileInput.files[0]);
+            }
+
+            // Mostrar indicador de carga
+            $('#modalEditar button').prop('disabled', true);
+            
+            $.ajax({
+                url: '@Url.Action("Editar", "Productos")/' + id,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: 'Producto actualizado correctamente',
+                            icon: 'success'
+                        }).then(() => {
+                            $('#modalEditar').modal('hide');
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', response.message, 'error');
+                    }
+                },
+                error: function () {
+                    Swal.fire('Error', 'Ocurrió un error al procesar la solicitud', 'error');
+                },
+                complete: function() {
+                    $('#modalEditar button').prop('disabled', false);
+                }
+            });
+        }
+
+        function validarFormularioEdicion() {
+            let esValido = true;
+
+            // Validar campos obligatorios
+            if (!$('#editNombre').val().trim()) {
+                mostrarError('editNombre', 'El nombre es obligatorio');
+                esValido = false;
+            }
+
+            if (!$('#editUnidadMedida').val()) {
+                mostrarError('editUnidadMedida', 'Debe seleccionar una unidad de medida');
+                esValido = false;
+            }
+
+            const contenidoNeto = parseFloat($('#editContenidoNeto').val());
+            if (isNaN(contenidoNeto) || contenidoNeto <= 0) {
+                mostrarError('editContenidoNeto', 'El contenido neto debe ser mayor a 0');
+                esValido = false;
+            }
+
+            const precio = parseFloat($('#editPrecio').val());
+            if (isNaN(precio) || precio <= 0) {
+                mostrarError('editPrecio', 'El precio debe ser mayor a 0');
+                esValido = false;
+            }
+
+            const stockInput = $('#editStock').val();
+            if (stockInput !== '') {
+                const stock = parseInt(stockInput);
+                if (isNaN(stock) || stock < 0) {
+                    mostrarError('editStock', 'El stock no puede ser negativo');
+                    esValido = false;
+                }
+            }
+
+            return esValido;
+        }
+
+        function confirmarEliminar(id, nombre) {
+            Swal.fire({
+                title: '¿Eliminar producto?',
+                html: `¿Estás seguro que deseas eliminar el producto:<br><strong>${nombre}</strong>?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return new Promise((resolve) => {
+                        // Simulamos un pequeño retraso para mostrar la carga
+                        setTimeout(() => {
+                            $.ajax({
+                                url: '@Url.Action("Eliminar", "Productos")',
+                                type: 'POST',
+                                data: { id: id },
+                                success: function(response) {
+                                    if (response.success) {
+                                        resolve(true);
+                                    } else {
+                                        Swal.showValidationMessage(
+                                            response.message || 'Error al eliminar el producto'
+                                        );
+                                        resolve(false);
+                                    }
+                                },
+                                error: function() {
+                                    Swal.showValidationMessage(
+                                        'Error de conexión al intentar eliminar el producto'
+                                    );
+                                    resolve(false);
+                                }
+                            });
+                        }, 1000); // Retraso de 1 segundo para mostrar la carga
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: '¡Eliminado!',
+                        text: 'El producto ha sido eliminado correctamente',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            });
+        }
+
+        // Función para obtener y mostrar el siguiente ID
+        function obtenerSiguienteId() {
+            $.get('@Url.Action("ObtenerSiguienteId", "Productos")', function(response) {
+                if (response.success) {
+                    $('#siguienteId').val(response.siguienteId);
+                }
+            });
+        }
+
+        // Llamar a la función cuando se abre el modal de crear
+        $('#modalProducto').on('show.bs.modal', function () {
+            obtenerSiguienteId();
+        });
+
+        function generarReporte() {
+            const fechaInicial = $('#fechaInicial').val();
+            const fechaFinal = $('#fechaFinal').val();
+            
+            if (!fechaInicial || !fechaFinal) {
+                Swal.fire('Error', 'Ambas fechas son requeridas', 'error');
+                return;
+            }
+
+            if (new Date(fechaInicial) > new Date(fechaFinal)) {
+                Swal.fire('Error', 'La fecha inicial no puede ser posterior a la fecha final', 'error');
+                return;
+            }
+
+            if (new Date(fechaFinal) > new Date()) {
+                Swal.fire('Error', 'No se pueden seleccionar fechas futuras', 'error');
+                return;
+            }
+
+            // Mostrar indicador de carga
+            Swal.fire({
+                title: 'Generando reporte',
+                text: 'Por favor espere...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Generar reporte
+            $.ajax({
+                url: '@Url.Action("GenerarReporte", "Productos")',
+                type: 'POST',
+                data: JSON.stringify({
+                    fechaInicial: fechaInicial,
+                    fechaFinal: fechaFinal,
+                    mostrarPreview: $('#mostrarPreview').is(':checked')
+                }),
+                contentType: 'application/json',
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(response) {
+                    if (response.type === 'application/json') {
+                        // Es un mensaje de error
+                        var reader = new FileReader();
+                        reader.onload = function() {
+                            var error = JSON.parse(this.result);
+                            Swal.fire('Error', error.message, 'error');
+                        };
+                        reader.readAsText(response);
+                        return;
+                    }
+
+                    // Es un PDF
+                    var blob = new Blob([response], { type: 'application/pdf' });
+                    var url = window.URL.createObjectURL(blob);
+
+                    if ($('#mostrarPreview').is(':checked')) {
+                        window.open(url);
+                    } else {
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Reporte_Inventario_${new Date().toISOString().split('T')[0]}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+
+                    window.URL.revokeObjectURL(url);
+                    $('#modalReporte').modal('hide');
+                    Swal.close();
+                },
+                error: function() {
+                    Swal.fire('Error', 'Ocurrió un error al generar el reporte', 'error');
+                }
+            });
+        }
+    </script>
+}
